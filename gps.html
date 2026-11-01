@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Radar de Navegação</title>
 
 <style>
@@ -12,178 +13,139 @@
 
 body {
     margin: 0;
-    background: #020804;
-    color: #4b9b62;
-    font-family: monospace;
     overflow: hidden;
+    background: #020804;
+    color: #477a52;
+    font-family: monospace;
 }
 
 #radar {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     position: relative;
-    background: radial-gradient(
-        ellipse,
-        #102b18 0%,
-        #06140b 55%,
-        #010402 100%
-    );
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            ellipse at center,
+            #0b1c10 0%,
+            #061008 55%,
+            #010402 100%
+        );
 }
 
-h2 {
-    font-size: 16px;
-    letter-spacing: 3px;
-    font-weight: normal;
+/* Linhas discretas do radar */
+#radar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    background-image:
+        linear-gradient(
+            rgba(48, 92, 57, 0.045) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(48, 92, 57, 0.045) 1px,
+            transparent 1px
+        );
+
+    background-size: 35px 35px;
+}
+
+/* Cabeçalho */
+#header {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    width: 100%;
     text-align: center;
-    margin: 8px;
+    z-index: 3;
+}
+
+#title {
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: #477a52;
 }
 
 #status {
-    font-size: 11px;
-    color: #397b4b;
-    margin: 8px;
-    text-align: center;
+    margin-top: 10px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #294e32;
 }
 
-#timer {
-    font-size: 11px;
-    margin: 10px;
-    color: #397b4b;
+/* Área do túnel */
+#map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 }
 
-svg {
-    width: min(90vw, 420px);
-    height: 68vh;
-    overflow: visible;
-}
-
-.tunnel {
+/* O túnel é contínuo e ultrapassa a tela */
+#tunnel {
     fill: none;
-    stroke: #123d21;
-    stroke-width: 75;
+    stroke: #102e19;
+    stroke-width: 76;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
-.route {
+/* Linha de navegação */
+#route {
     fill: none;
-    stroke: #286b3c;
-    stroke-width: 3;
+    stroke: #285a35;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-dasharray: 8 9;
+    stroke-dasharray: 4 11;
 }
 
+/* Barco representado por um ponto */
 #boat {
     fill: #a4ffb5;
-    stroke: #55c978;
-    stroke-width: 3;
-    filter: drop-shadow(0 0 8px #65ff8a);
+    stroke: #4b9b62;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 7px #58bd70);
 }
 
-.marker {
-    fill: none;
-    stroke: #397b4b;
-    stroke-width: 3;
-    stroke-linecap: round;
+/* Botão inicial */
+#controls {
+    position: absolute;
+    bottom: 35px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    z-index: 3;
 }
 
-#startButton,
-#continueButton {
-    background: #102b18;
-    border: 1px solid #397b4b;
-    color: #8edba0;
-    padding: 14px 22px;
+#start {
+    padding: 14px 24px;
+    border: 1px solid #315c3b;
+    background: #08150b;
+    color: #72a980;
     font-family: monospace;
-    letter-spacing: 2px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    animation: blink 1.5s infinite;
     cursor: pointer;
 }
 
-#startButton {
-    animation: blink 1.2s infinite;
+#hint {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #294e32;
 }
 
 @keyframes blink {
     50% {
         opacity: 0.35;
-    }
-}
-
-#message {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(1, 6, 2, 0.97);
-    z-index: 5;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    text-align: center;
-    padding: 28px;
-}
-
-#message h1 {
-    color: #70b982;
-    font-size: 21px;
-    letter-spacing: 3px;
-    font-weight: normal;
-}
-
-#message p {
-    color: #5b9b6b;
-    font-size: 13px;
-    line-height: 2;
-    max-width: 340px;
-}
-
-#secretStar {
-    display: none;
-    position: fixed;
-    top: 5px;
-    right: 7px;
-    color: #24472c;
-    opacity: 0.12;
-    cursor: pointer;
-    font-size: 20px;
-    padding: 12px;
-    z-index: 100;
-    user-select: none;
-}
-
-#secretStar:hover {
-    opacity: 0.7;
-}
-
-#continueBox {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 5, 2, 0.98);
-    z-index: 99;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-    color: #4b9b62;
-    padding: 25px;
-}
-
-#continueBox h2 {
-    line-height: 1.8;
-}
-
-#continueButton {
-    animation: blink 1.5s infinite;
-}
-
-@media (max-width: 350px) {
-    h2 {
-        font-size: 13px;
     }
 }
 </style>
@@ -193,224 +155,104 @@ svg {
 
 <div id="radar">
 
-    <h2>RADAR DE NAVEGAÇÃO</h2>
-    <div id="status">SISTEMA EM ESPERA</div>
+    <header id="header">
+        <div id="title">RADAR DE NAVEGAÇÃO</div>
+        <div id="status">SISTEMA EM ESPERA</div>
+    </header>
 
-    <svg viewBox="0 0 400 900" id="map">
+    <svg id="map"
+         viewBox="0 0 400 800"
+         preserveAspectRatio="xMidYMid slice"
+         aria-label="Radar com túnel de navegação">
 
-        <!-- Túnel -->
-        <path class="tunnel"
-            d="M290 870
-               L290 700
-               Q290 610 275 520
-               Q265 430 210 385
-               Q145 350 105 310
-               Q85 270 90 210
-               L100 130
-               Q105 80 125 25" />
+        <!--
+          O caminho começa fora da tela,
+          faz curvas e continua além das bordas.
+          Não há marcações de parada ou destino.
+        -->
 
-        <!-- Trajeto -->
-        <path id="route" class="route"
-            d="M290 870
-               L290 700
-               Q290 610 275 520
-               Q265 430 210 385
-               Q145 350 105 310
-               Q85 270 90 210
-               L100 130
-               Q105 80 125 25" />
+        <path id="tunnel"
+            d="
+            M 115 900
+            C 115 800, 115 760, 165 700
+            C 220 635, 305 615, 310 530
+            C 315 455, 235 425, 175 390
+            C 110 350, 65 315, 85 245
+            C 105 180, 205 170, 250 115
+            C 290 65, 275 10, 305 -100
+            " />
 
-        <!-- Ponto de obstrução -->
-        <g class="marker">
-            <path d="M185 365 L245 425 M245 365 L185 425"/>
-        </g>
+        <path id="route"
+            d="
+            M 115 900
+            C 115 800, 115 760, 165 700
+            C 220 635, 305 615, 310 530
+            C 315 455, 235 425, 175 390
+            C 110 350, 65 315, 85 245
+            C 105 180, 205 170, 250 115
+            C 290 65, 275 10, 305 -100
+            " />
 
-        <!-- Parada final -->
-        <g class="marker">
-            <path d="M85 65 L145 125 M145 65 L85 125"/>
-        </g>
-
-        <!-- Barco representado por um ponto -->
-        <circle id="boat" cx="290" cy="870" r="7"/>
+        <circle id="boat"
+                cx="115"
+                cy="790"
+                r="5" />
 
     </svg>
 
-    <button id="startButton" onclick="startPath()">
-        INICIAR CAMINHO
-    </button>
+    <div id="controls">
+        <button id="start" onclick="startJourney()">
+            INICIAR CAMINHO
+        </button>
 
-    <div id="timer">AGUARDANDO INÍCIO</div>
+        <div id="hint">
+            AGUARDANDO INSTRUÇÕES
+        </div>
+    </div>
 
-</div>
-
-<!-- Avisos de parada -->
-<div id="message">
-    <h1 id="messageTitle"></h1>
-    <p id="messageText"></p>
-</div>
-
-<!-- Estrela discreta -->
-<div id="secretStar" onclick="revealContinue()">★</div>
-
-<!-- Continuação -->
-<div id="continueBox">
-    <h2>CONEXÃO RESTABELECIDA</h2>
-    <p>Uma nova rota está disponível.</p>
-
-    <button id="continueButton" onclick="goToReturn()">
-        CONTINUAR PROGRESSO
-    </button>
 </div>
 
 <script>
 const route = document.getElementById("route");
 const boat = document.getElementById("boat");
 const statusText = document.getElementById("status");
-const timer = document.getElementById("timer");
-const startButton = document.getElementById("startButton");
-const message = document.getElementById("message");
-const secretStar = document.getElementById("secretStar");
-const continueBox = document.getElementById("continueBox");
+const startButton = document.getElementById("start");
+const hint = document.getElementById("hint");
 
-const totalLength = route.getTotalLength();
-
-// Proporção do trajeto até a primeira parada.
-const firstStop = 0.52;
-
-// Cada trecho dura 2 minutos e 30 segundos.
-const duration = 150000;
-
-let phase = 0;
+let animation = null;
 let startTime = null;
-let animationFrame = null;
-let starTimer = null;
+let running = false;
 
-function moveBoat(progress) {
-    const point = route.getPointAtLength(
-        totalLength * progress
-    );
+function startJourney() {
+    if (running) return;
+
+    running = true;
+    startTime = performance.now();
+
+    startButton.style.display = "none";
+    hint.textContent = "NAVEGAÇÃO INICIADA";
+    statusText.textContent = "SINAL DE NAVEGAÇÃO ATIVO";
+
+    animation = requestAnimationFrame(moveBoat);
+}
+
+function moveBoat(now) {
+    if (!running) return;
+
+    const elapsed = now - startTime;
+
+    // Animação de demonstração de 20 segundos.
+    const duration = 20000;
+
+    const progress = (elapsed % duration) / duration;
+
+    const length = route.getTotalLength();
+    const point = route.getPointAtLength(length * progress);
 
     boat.setAttribute("cx", point.x);
     boat.setAttribute("cy", point.y);
-}
 
-function startPath() {
-    if (phase !== 0) return;
-
-    phase = 1;
-    startButton.style.display = "none";
-    statusText.textContent = "NAVEGAÇÃO EM ANDAMENTO";
-    startTime = performance.now();
-
-    animationFrame = requestAnimationFrame(animate);
-}
-
-function animate(now) {
-    if (phase !== 1 && phase !== 2) return;
-
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-
-    let position;
-
-    if (phase === 1) {
-        position = progress * firstStop;
-    } else {
-        position = firstStop +
-            progress * (1 - firstStop);
-    }
-
-    moveBoat(position);
-
-    const remaining = Math.max(
-        0,
-        Math.ceil((duration - elapsed) / 1000)
-    );
-
-    timer.textContent =
-        "TEMPO RESTANTE: " +
-        Math.floor(remaining / 60) + ":" +
-        String(remaining % 60).padStart(2, "0");
-
-    if (progress >= 1) {
-        if (phase === 1) {
-            obstructionStop();
-        } else {
-            finalStop();
-        }
-
-        return;
-    }
-
-    animationFrame = requestAnimationFrame(animate);
-}
-
-function showMessage(title, text) {
-    document.getElementById("messageTitle").textContent = title;
-    document.getElementById("messageText").textContent = text;
-    message.style.display = "flex";
-}
-
-function obstructionStop() {
-    phase = 0;
-    startTime = null;
-
-    statusText.textContent = "PERCURSO INTERROMPIDO";
-    timer.textContent = "SINAL DE NAVEGAÇÃO INTERROMPIDO";
-
-    showMessage(
-        "CONSTRUÇÃO",
-        "PASSAGEM IMPEDIDA. Por favor, acabe com a obstrução para prosseguir o caminho."
-    );
-
-    // O barco permanece parado até a estrela ser clicada.
-    secretStar.style.display = "block";
-}
-
-function revealContinue() {
-    // A estrela só libera a primeira parada.
-    if (phase === 0 &&
-        document.getElementById("messageTitle").textContent === "CONSTRUÇÃO") {
-
-        message.style.display = "none";
-        secretStar.style.display = "none";
-
-        phase = 2;
-        startTime = performance.now();
-
-        statusText.textContent = "NAVEGAÇÃO RETOMADA";
-
-        animationFrame = requestAnimationFrame(animate);
-        return;
-    }
-
-    // Na parada final, a estrela revela o botão de continuação.
-    if (phase === 3) {
-        continueBox.style.display = "flex";
-    }
-}
-
-function finalStop() {
-    phase = 3;
-
-    moveBoat(1);
-
-    statusText.textContent = "PARADA OBRIGATÓRIA";
-    timer.textContent = "NAVEGAÇÃO SUSPENSA";
-
-    showMessage(
-        "PARADA OBRIGATÓRIA",
-        "O percurso foi interrompido. Aguarde novas instruções."
-    );
-
-    // A estrela só aparece após 60 segundos.
-    starTimer = setTimeout(() => {
-        secretStar.style.display = "block";
-    }, 60000);
-}
-
-function goToReturn() {
-    window.location.href = "volta.html";
+    animation = requestAnimationFrame(moveBoat);
 }
 </script>
 
