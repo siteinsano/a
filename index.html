@@ -6,68 +6,534 @@
 <title>Verificação</title>
 
 <style>
+:root {
+  --bg: #f4f4f1;
+  --fg: #111;
+}
+
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-    margin: 0;
-    min-height: 100vh;
-    background: #030303;
-    color: #a9a9a9;
-    font-family: monospace;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Arial, Helvetica, sans-serif;
+  display: grid;
+  place-items: center;
+  transition: background .25s, color .25s;
 }
 
-#container {
-    width: 90%;
-    max-width: 420px;
-    text-align: center;
+#noise {
+  position: fixed;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+  mix-blend-mode: multiply;
 }
 
-h1 {
-    font-size: 19px;
-    letter-spacing: 4px;
-    font-weight: normal;
-    margin-bottom: 12px;
+.screen {
+  width: min(92vw, 620px);
+  text-align: center;
+  position: relative;
+  z-index: 2;
 }
 
-#description {
-    font-size: 12px;
-    color: #777;
-    line-height: 1.8;
+.instruction {
+  font-size: clamp(14px, 3.4vw, 18px);
+  margin: 0 0 34px;
+  letter-spacing: .04em;
+}
+
+#startBtn {
+  margin: 0 auto 22px;
+  display: block;
+  padding: 12px 26px;
+  border: 1px solid #777;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  letter-spacing: .08em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+#startBtn:hover {
+  background: rgba(127,127,127,.12);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(70px, 112px));
+  gap: 14px;
+  justify-content: center;
+}
+
+.tile {
+  aspect-ratio: 1;
+  border: 1px solid #aaa;
+  background: rgba(255,255,255,.7);
+  color: #111;
+  font-size: clamp(34px, 8vw, 52px);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  user-select: none;
+  transition: transform .16s, background .16s, border-color .16s;
+  border-radius: 2px;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tile:hover {
+  background: #e5e5e1;
+}
+
+.tile:active {
+  transform: scale(.94);
+}
+
+.tile:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.tile.wrong {
+  animation: wrong .22s linear;
+}
+
+@keyframes wrong {
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+#end {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: #eee;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  font-size: clamp(18px, 4vw, 28px);
+  letter-spacing: .06em;
+  text-align: center;
+  padding: 24px;
+}
+
+#end.visible {
+  opacity: 1;
+}
+
+#end .message {
+  opacity: 0;
+  transition: opacity .5s;
+}
+
+#end.message-on .message {
+  opacity: 1;
+}
+
+body.strange {
+  background: #171313;
+  color: #eee;
+}
+
+body.strange .tile {
+  background: #191616;
+  color: #f1eeee;
+  border-color: #6c2828;
+}
+
+body.strange .tile:hover {
+  background: #321d1d;
+}
+
+body.strange .instruction {
+  text-shadow: 1px 0 #f00, -1px 0 #0ff;
+}
+
+body.invert {
+  filter: invert(1) contrast(1.35);
+}
+
+body.glitch .screen {
+  animation: glitch .17s steps(2,end) infinite;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  25% { transform: translate(2px,-1px); }
+  50% { transform: translate(-2px,1px); }
+  75% { transform: translate(1px,2px); }
+}
+
+body.final-shake .screen {
+  animation: violent .07s steps(2,end) infinite;
+}
+
+@keyframes violent {
+  0% { transform: translate(0,0) rotate(0); }
+  25% { transform: translate(7px,-4px) rotate(.5deg); }
+  50% { transform: translate(-8px,5px) rotate(-.6deg); }
+  75% { transform: translate(4px,7px) rotate(.3deg); }
+}
+
+@media (max-width: 380px) {
+  .grid {
+    gap: 9px;
+    grid-template-columns: repeat(3,minmax(64px,92px));
+  }
+
+  .instruction {
     margin-bottom: 25px;
+  }
 }
+</style>
+</head>
 
-button {
-    font-family: monospace;
-    cursor: pointer;
-}
+<body>
 
-#start {
-    background: #111;
-    border: 1px solid #555;
-    color: #ccc;
-    padding: 15px 25px;
-    letter-spacing: 3px;
-    animation: blink 1.5s infinite;
-}
+<canvas id="noise"></canvas>
 
-@keyframes blink {
-    50% {
-        opacity: 0.35;
+<main class="screen" id="screen">
+
+  <p class="instruction">Verificação necessária.</p>
+
+  <button id="startBtn" type="button">
+    Iniciar verificação
+  </button>
+
+  <div class="grid" id="grid"
+       aria-label="Tela de verificação" hidden>
+  </div>
+
+</main>
+
+<div id="end">
+  <div class="message">
+    Acesso permitido, motor ligado
+  </div>
+</div>
+
+<script>
+(() => {
+  const grid = document.getElementById('grid');
+  const body = document.body;
+  const noise = document.getElementById('noise');
+  const ctx = noise.getContext('2d', { alpha: true });
+  const end = document.getElementById('end');
+
+  const count = 6;
+
+  let eyeCount = 1;
+  let clicks = 0;
+  let audioCtx = null;
+  let started = false;
+  let staticGain = null;
+  let noiseSource = null;
+  let filter = null;
+  let ending = false;
+  let noiseFrame = 0;
+
+  function resizeNoise() {
+    noise.width = Math.max(1, Math.floor(innerWidth * .55));
+    noise.height = Math.max(1, Math.floor(innerHeight * .55));
+  }
+
+  resizeNoise();
+  addEventListener('resize', resizeNoise);
+
+  function drawNoise() {
+    if (!ctx || ending) return;
+
+    const w = noise.width;
+    const h = noise.height;
+    const image = ctx.createImageData(w, h);
+
+    const intensity = Math.min(.10 + clicks * .09, .75);
+
+    for (let i = 0; i < image.data.length; i += 4) {
+      const v = Math.random() > .5 ? 255 : 0;
+
+      image.data[i] = v;
+      image.data[i + 1] = v;
+      image.data[i + 2] = v;
+      image.data[i + 3] = Math.random() * 255 * intensity;
     }
-}
 
-#game {
-    display: none;
-}
+    ctx.putImageData(image, 0, 0);
 
-#grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-   
+    noise.style.opacity = String(
+      Math.min(.08 + clicks * .12, .78)
+    );
+
+    noiseFrame = requestAnimationFrame(drawNoise);
+  }
+
+  function startAudio() {
+    if (audioCtx) return;
+
+    try {
+      audioCtx = new (
+        window.AudioContext || window.webkitAudioContext
+      )();
+
+      noiseSource = audioCtx.createBufferSource();
+
+      const buffer = audioCtx.createBuffer(
+        1,
+        audioCtx.sampleRate * 2,
+        audioCtx.sampleRate
+      );
+
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < data.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      noiseSource.buffer = buffer;
+      noiseSource.loop = true;
+
+      filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 650;
+
+      staticGain = audioCtx.createGain();
+      staticGain.gain.value = 0.0001;
+
+      noiseSource.connect(filter);
+      filter.connect(staticGain);
+      staticGain.connect(audioCtx.destination);
+
+      noiseSource.start();
+
+    } catch (e) {}
+  }
+
+  function updateAudio() {
+    if (!audioCtx || !staticGain) return;
+
+    const level = Math.min(.015 + clicks * .026, .20);
+
+    staticGain.gain.setTargetAtTime(
+      level,
+      audioCtx.currentTime,
+      .16
+    );
+
+    if (filter) {
+      filter.frequency.setTargetAtTime(
+        650 + clicks * 210,
+        audioCtx.currentTime,
+        .2
+      );
+    }
+  }
+
+  function moveEye() {
+    const buttons = [...grid.children];
+
+    buttons.forEach(b => {
+      b.textContent = '★';
+      delete b.dataset.eye;
+    });
+
+    const available = buttons.map((_, i) => i);
+
+    for (let i = 0; i < eyeCount; i++) {
+      const pick = Math.floor(
+        Math.random() * available.length
+      );
+
+      const idx = available.splice(pick, 1)[0];
+
+      buttons[idx].textContent = '⊙';
+      buttons[idx].dataset.eye = 'true';
+    }
+  }
+
+  function makeGrid() {
+    grid.innerHTML = '';
+
+    for (let i = 0; i < count; i++) {
+      const b = document.createElement('button');
+
+      b.className = 'tile';
+      b.type = 'button';
+      b.textContent = '★';
+      b.setAttribute('aria-label', 'Símbolo');
+
+      b.addEventListener('click', () => onTile(b));
+
+      grid.appendChild(b);
+    }
+
+    moveEye();
+  }
+
+  function onTile(button) {
+    if (ending || !started) return;
+
+    startAudio();
+
+    if (button.textContent !== '⊙') {
+      button.classList.remove('wrong');
+      void button.offsetWidth;
+      button.classList.add('wrong');
+
+      clicks++;
+
+      updateWeirdness();
+      updateAudio();
+
+      return;
+    }
+
+    clicks++;
+    eyeCount++;
+
+    updateWeirdness();
+    updateAudio();
+
+    if (eyeCount > count) {
+      finish();
+      return;
+    }
+
+    // O olho muda de posição e uma estrela vira olho.
+    moveEye();
+  }
+
+  function updateWeirdness() {
+    if (clicks >= 1) {
+      body.classList.add('strange');
+    }
+
+    if (clicks >= 2) {
+      body.classList.add('glitch');
+      noise.style.mixBlendMode = 'screen';
+    }
+
+    if (clicks >= 3) {
+      body.classList.add('invert');
+    }
+
+    if (clicks >= 4) {
+      document.querySelector('.instruction')
+        .textContent =
+        'Identifique e selecione o símbolo diferente.';
+
+      document.querySelector('.instruction').style.transform =
+        `translateX(${Math.random() * 8 - 4}px)`;
+
+      [...grid.children].forEach(b => {
+        b.style.transform =
+          `rotate(${Math.random() * 4 - 2}deg)`;
+      });
+    }
+
+    drawNoise();
+  }
+
+  function finish() {
+    ending = true;
+
+    cancelAnimationFrame(noiseFrame);
+
+    body.classList.remove('invert');
+    body.classList.add('final-shake');
+
+    noise.style.opacity = '.95';
+    end.classList.add('visible');
+
+    // A tela treme e escurece.
+    setTimeout(() => {
+      body.classList.remove(
+        'final-shake',
+        'glitch',
+        'strange',
+        'invert'
+      );
+
+      body.style.background = '#000';
+
+      document.getElementById('screen').style.visibility =
+        'hidden';
+
+      noise.style.opacity = '0';
+      end.style.background = '#000';
+
+      // Para a estática.
+      if (staticGain && audioCtx) {
+        staticGain.gain.setTargetAtTime(
+          0,
+          audioCtx.currentTime,
+          .08
+        );
+
+        setTimeout(() => {
+          try {
+            noiseSource.stop();
+            audioCtx.close();
+          } catch (e) {}
+        }, 350);
+      }
+
+      // Após quatro segundos, mostra a mensagem final.
+      setTimeout(() => {
+        end.classList.add('message-on');
+
+        body.style.background = '#f4f4f1';
+        end.style.background = '#f4f4f1';
+        end.style.color = '#111';
+
+        // Redireciona para o radar após a mensagem aparecer.
+        setTimeout(() => {
+          window.location.href = 'gps.html';
+        }, 4000);
+
+      }, 4000);
+
+    }, 900);
+  }
+
+  makeGrid();
+
+  document.getElementById('startBtn')
+    .addEventListener('click', () => {
+
+      if (started || ending) return;
+
+      started = true;
+
+      startAudio();
+
+      document.getElementById('startBtn').hidden = true;
+
+      document.querySelector('.instruction').textContent =
+        'Identifique e selecione o símbolo diferente.';
+
+      grid.hidden = false;
+
+      updateAudio();
+    });
+
+})();
+</script>
+
+</body>
+</html>
