@@ -2,259 +2,389 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Radar de Navegação</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPS Náutico</title>
 <style>
-* {
-    box-sizing: border-box;
+:root{
+  --bg:#07110e;--panel:#0d1e18;--line:#29483a;--text:#dceee4;
+  --muted:#83a896;--water:#102d25;--water2:#15392e;--green:#75f0a5;
+  --warning:#ffc56c;--danger:#ff8b79;
 }
-
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #020804;
-    color: #477a52;
-    font-family: monospace;
-}
-
-#radar {
-    position: relative;
-    width: 100vw;
-    height: 100dvh;
-    overflow: hidden;
-    background:
-        radial-gradient(
-            ellipse at center,
-            #0b1c10 0%,
-            #061008 55%,
-            #010402 100%
-        );
-}
-
-/* Linhas discretas do radar */
-#radar::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-
-    background-image:
-        linear-gradient(
-            rgba(48, 92, 57, 0.045) 1px,
-            transparent 1px
-        ),
-        linear-gradient(
-            90deg,
-            rgba(48, 92, 57, 0.045) 1px,
-            transparent 1px
-        );
-
-    background-size: 35px 35px;
-}
-
-/* Cabeçalho */
-#header {
-    position: absolute;
-    top: 24px;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    z-index: 3;
-}
-
-#title {
-    font-size: 13px;
-    letter-spacing: 4px;
-    color: #477a52;
-}
-
-#status {
-    margin-top: 10px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: #294e32;
-}
-
-/* Área do túnel */
-#map {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/* O túnel é contínuo e ultrapassa a tela */
-#tunnel {
-    fill: none;
-    stroke: #102e19;
-    stroke-width: 76;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* Linha de navegação */
-#route {
-    fill: none;
-    stroke: #285a35;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-dasharray: 4 11;
-}
-
-/* Barco representado por um ponto */
-#boat {
-    fill: #a4ffb5;
-    stroke: #4b9b62;
-    stroke-width: 2;
-    filter: drop-shadow(0 0 7px #58bd70);
-}
-
-/* Botão inicial */
-#controls {
-    position: absolute;
-    bottom: 35px;
-    left: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    z-index: 3;
-}
-
-#start {
-    padding: 14px 24px;
-    border: 1px solid #315c3b;
-    background: #08150b;
-    color: #72a980;
-    font-family: monospace;
-    font-size: 11px;
-    letter-spacing: 3px;
-    animation: blink 1.5s infinite;
-    cursor: pointer;
-}
-
-#hint {
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: #294e32;
-}
-
-@keyframes blink {
-    50% {
-        opacity: 0.35;
-    }
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+body{min-height:100vh;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#10251c 0%,#07110e 68%)}
+.app{height:100dvh;display:flex;flex-direction:column;padding:14px;gap:12px}
+header,.statusbar,.controls{border:1px solid var(--line);background:#0b1914eF;box-shadow:0 8px 28px #0003}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:32px;height:32px;border:1px solid #5b9b77;border-radius:50%;display:grid;place-items:center;color:var(--green);font-size:19px}
+h1{font-size:clamp(14px,2.5vw,20px);letter-spacing:.16em;margin:0}
+.sub{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.12em}
+.live{font-size:10px;color:var(--green);letter-spacing:.14em;white-space:nowrap}
+main{position:relative;flex:1;min-height:0;overflow:hidden;border:1px solid #315543;background:#0b1e17}
+#map{width:100%;height:100%;display:block}
+.hud{position:absolute;pointer-events:none;background:#07130fe8;border:1px solid #315543;padding:9px 11px;font-size:10px;line-height:1.6;letter-spacing:.06em}
+.hud strong{color:var(--green);font-weight:600}
+.hud-tl{top:12px;left:12px}.hud-br{bottom:12px;right:12px;text-align:right}
+.hud-tr{top:12px;right:12px}
+.secret{position:absolute;top:0;right:0;width:27px;height:27px;border:0;background:transparent;color:#19372a;font-size:13px;opacity:.11;cursor:pointer;z-index:5}
+.secret:focus-visible{opacity:.8;outline:1px solid var(--green)}
+.controls{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.statusbar{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px}
+#statusTitle{font-size:12px;letter-spacing:.1em}
+#statusDetail{font-size:10px;color:var(--muted);margin-top:4px}
+button.action{font:inherit;font-size:11px;letter-spacing:.1em;padding:12px 18px;border:1px solid #6bb98b;background:#163b2a;color:#dfffea;cursor:pointer;min-width:155px}
+button.action:hover{background:#20563a}
+button.action:disabled{opacity:.45;cursor:not-allowed}
+.small{color:var(--muted);font-size:10px;line-height:1.5}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#04100bd9;padding:20px;z-index:4}
+.overlay.show{display:flex}
+.dialog{width:min(420px,100%);border:1px solid #548567;background:#0b1b14;padding:24px;box-shadow:0 20px 70px #0008}
+.kicker{font-size:10px;letter-spacing:.2em;color:var(--muted)}
+.dialog h2{font-size:18px;letter-spacing:.08em;margin:12px 0}
+.dialog p{font-size:12px;color:#afc9b9;line-height:1.7;margin:0 0 20px}
+.dialog .action{width:100%;margin-top:8px}
+.warning-mark{color:var(--warning);font-size:22px}
+@media(max-width:520px){
+ .app{padding:7px;gap:7px}.hud{font-size:9px;padding:7px}.hud-tl{top:7px;left:7px}.hud-br{bottom:7px;right:7px}
+ .controls{align-items:stretch}.controls .action{width:100%}.statusbar{align-items:flex-start;flex-direction:column}
 }
 </style>
 </head>
-
 <body>
+<div class="app">
+<header>
+  <div class="brand"><div class="logo">⌁</div><div><h1>GPS NÁUTICO</h1><div class="sub">SISTEMA DE NAVEGAÇÃO // CANAL 04</div></div></div>
+  <div class="live">● SISTEMA ATIVO</div>
+</header>
 
-<div id="radar">
+<main aria-label="Mapa de navegação">
+<svg id="map" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Canal de água entre paredes e construções">
+<defs>
+ <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#244638" stroke-width="1" opacity=".5"/></pattern>
+ <pattern id="waterLines" width="80" height="70" patternUnits="userSpaceOnUse"><path d="M8 18q12 -5 24 0t24 0 M35 52q10 -4 20 0" fill="none" stroke="#2b5b47" stroke-width="1.4" opacity=".55"/></pattern>
+ <filter id="glow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <linearGradient id="wall" x1="0" x2="1"><stop stop-color="#354d40"/><stop offset=".45" stop-color="#233b30"/><stop offset="1" stop-color="#172b22"/></linearGradient>
+</defs>
 
-    <header id="header">
-        <div id="title">RADAR DE NAVEGAÇÃO</div>
-        <div id="status">SISTEMA EM ESPERA</div>
-    </header>
+<rect width="800" height="1000" fill="#0a1913"/>
+<rect width="800" height="1000" fill="url(#grid)"/>
 
-    <svg id="map"
-         viewBox="0 0 400 800"
-         preserveAspectRatio="xMidYMid slice"
-         aria-label="Radar com túnel de navegação">
+<!-- Paredes e construções -->
+<path d="M170 -50 H310 V110 H345 V205 H310 V315 Q315 370 370 390 L475 410 Q500 415 520 400 L560 425 Q610 480 620 555 L625 860 H690 V930 H625 V1050 H520 V700 Q520 620 480 600 L355 565 Q260 535 220 450 Q170 350 170 250 Z" fill="url(#wall)" stroke="#64806e" stroke-width="3"/>
 
-        <!--
-          O caminho começa fora da tela,
-          faz curvas e continua além das bordas.
-          Não há marcações de parada ou destino.
-        -->
+<path d="M170 -50 H310 V110 H345 V205 H310 V315 Q315 370 370 390 L475 410 Q500 415 520 400 L560 425 Q610 480 620 555 L625 860 H690 V930 H625 V1050" fill="none" stroke="#101e17" stroke-width="13" opacity=".8"/>
 
-        <path id="tunnel"
-            d="
-            M 115 900
-            C 115 800, 115 760, 165 700
-            C 220 635, 305 615, 310 530
-            C 315 455, 235 425, 175 390
-            C 110 350, 65 315, 85 245
-            C 105 180, 205 170, 250 115
-            C 290 65, 275 10, 305 -100
-            " />
+<!-- Canal de água -->
+<path id="water" d="M255 -20 C250 90 238 175 250 270 C260 365 290 400 360 425 C405 440 460 420 500 445 C550 475 565 535 570 600 C578 700 565 790 550 870 L548 1040 L430 1040 C430 880 440 740 430 650 C420 585 395 580 345 560 C250 525 205 470 195 380 C185 285 190 170 205 -20 Z" fill="#103529" stroke="#6a8d76" stroke-width="3"/>
 
-        <path id="route"
-            d="
-            M 115 900
-            C 115 800, 115 760, 165 700
-            C 220 635, 305 615, 310 530
-            C 315 455, 235 425, 175 390
-            C 110 350, 65 315, 85 245
-            C 105 180, 205 170, 250 115
-            C 290 65, 275 10, 305 -100
-            " />
+<path d="M255 -20 C250 90 238 175 250 270 C260 365 290 400 360 425 C405 440 460 420 500 445 C550 475 565 535 570 600 C578 700 565 790 550 870 L548 1040" fill="none" stroke="#1b4b38" stroke-width="14" opacity=".55"/>
 
-        <circle id="boat"
-                cx="115"
-                cy="790"
-                r="5" />
+<path d="M255 -20 C250 90 238 175 250 270 C260 365 290 400 360 425 C405 440 460 420 500 445 C550 475 565 535 570 600 C578 700 565 790 550 870 L548 1040" fill="none" stroke="#2d6248" stroke-width="2" stroke-dasharray="3 10" opacity=".8"/>
 
-    </svg>
+<path d="M170 -50 H310 V110 H345 V205 H310 V315 Q315 370 370 390 L475 410 Q500 415 520 400 L560 425 Q610 480 620 555 L625 860 H690 V930 H625 V1050" fill="none" stroke="#526c5a" stroke-width="3" stroke-dasharray="8 8" opacity=".7"/>
 
-    <div id="controls">
-        <button id="start" onclick="startJourney()">
-            INICIAR CAMINHO
-        </button>
+<!-- Construção do cais final -->
+<rect x="279" y="30" width="102" height="112" rx="3" fill="#263c30" stroke="#8aa18c" stroke-width="2"/>
+<path d="M290 42h80v88h-80z M310 42v88 M350 42v88 M290 70h80 M290 100h80" fill="none" stroke="#526f5b" stroke-width="2"/>
+<text x="330" y="20" fill="#a7c3ad" font-size="13" text-anchor="middle" letter-spacing="2">CAIS FINAL</text>
 
-        <div id="hint">
-            AGUARDANDO INSTRUÇÕES
-        </div>
-    </div>
+<!-- Construção da área de embarque -->
+<path d="M615 860 H730 V948 H615 Z" fill="#263c30" stroke="#8aa18c" stroke-width="3"/>
+<path d="M630 875h86v58h-86z M645 875v58 M673 875v58 M701 875v58" fill="none" stroke="#526f5b" stroke-width="2"/>
+<text x="672" y="970" fill="#a7c3ad" font-size="12" text-anchor="middle">EMBARQUE</text>
 
+<!-- Trajeto -->
+<path id="route1" d="M548 900 L550 830 C565 760 578 680 570 600 C565 535 550 475 500 445 C460 420 405 440 360 425 C290 400 260 365 250 270 C238 175 250 90 255 15" fill="none" stroke="#75f0a5" stroke-width="2.5" stroke-dasharray="7 9" opacity=".55"/>
+
+<!-- Destino -->
+<circle cx="255" cy="160" r="8" fill="#75f0a5" opacity=".8"/>
+<text x="270" y="165" fill="#a8d9b8" font-size="12" letter-spacing="1">DESTINO</text>
+
+<!-- Barco -->
+<g id="boat" transform="translate(548 900)" filter="url(#glow)">
+ <circle r="12" fill="#75f0a5" opacity=".18"/>
+ <circle r="6.5" fill="#a2ffbf" stroke="#e2ffeb" stroke-width="1.5"/>
+ <circle r="2" fill="#123d27"/>
+</g>
+</svg>
+
+<div class="hud hud-tl">POSIÇÃO <strong id="coords">—</strong><br>ROTA <strong id="routeState">EM ESPERA</strong><br>SINAL <strong>ESTÁVEL</strong></div>
+<div class="hud hud-tr">GPS // NAV-04<br><strong id="clock">00:00</strong></div>
+<div class="hud hud-br">CANAL INTERNO<br><strong>MAPA DE NAVEGAÇÃO</strong><br>ESCALA NÃO DEFINIDA</div>
+
+<button class="secret" id="secret" aria-label="Acesso técnico" title="">△</button>
+
+<div class="overlay show" id="startOverlay">
+ <div class="dialog">
+  <div class="kicker">SISTEMA DE NAVEGAÇÃO</div>
+  <h2>PRONTO PARA PARTIR</h2>
+  <p>Rota carregada. Aguardando autorização para iniciar o deslocamento da embarcação.</p>
+  <button class="action" id="startBtn">INICIAR TRAJETO</button>
+ </div>
+</div>
+
+<div class="overlay" id="obstacleOverlay">
+ <div class="dialog">
+  <div class="warning-mark">▲</div>
+  <div class="kicker">ALERTA DE NAVEGAÇÃO</div>
+  <h2>CAMINHO OBSTRUÍDO</h2>
+  <p>A navegação foi interrompida. A obstrução deve ser retirada para que a embarcação possa prosseguir.</p>
+ </div>
+</div>
+
+<div class="overlay" id="clearOverlay">
+ <div class="dialog">
+  <div class="kicker">SISTEMA DE NAVEGAÇÃO</div>
+  <h2>CAMINHO DESOBSTRUÍDO</h2>
+  <p>O canal está liberado. Seguir caminho?</p>
+  <button class="action" id="yesBtn">SIM</button>
+ </div>
+</div>
+
+<div class="overlay" id="arrivalOverlay">
+ <div class="dialog">
+  <div class="kicker">DESTINO ALCANÇADO</div>
+  <h2>PARADA OBRIGATÓRIA</h2>
+  <p>A embarcação chegou ao ponto de desembarque. Clique para continuar.</p>
+  <button class="action" id="continueBtn">PROSSEGUIR</button>
+ </div>
+</div>
+</main>
+
+<div class="statusbar">
+ <div>
+  <div id="statusTitle">AGUARDANDO INÍCIO</div>
+  <div id="statusDetail">A embarcação permanece atracada.</div>
+ </div>
+ <div class="small" id="elapsed">TEMPO DECORRIDO: 00:00</div>
+</div>
+
+<div class="controls">
+ <div class="small">NAVEGAÇÃO AUTOMÁTICA<br>O trajeto começa após uma breve espera.</div>
+ <button class="action" id="resetBtn" style="min-width:120px">REINICIAR GPS</button>
+</div>
 </div>
 
 <script>
-const route = document.getElementById("route");
-const boat = document.getElementById("boat");
-const statusText = document.getElementById("status");
-const startButton = document.getElementById("start");
-const hint = document.getElementById("hint");
+(() => {
+ const $=id=>document.getElementById(id);
+ const boat=$('boat'), clock=$('clock'), elapsed=$('elapsed'), coords=$('coords'), routeState=$('routeState');
+ const overlays=['startOverlay','obstacleOverlay','clearOverlay','arrivalOverlay'];
 
-let animation = null;
-let startTime = null;
-let running = false;
+ const path1=[
+  [548,900],[550,830],[565,760],[578,680],
+  [570,600],[565,535],[550,475],[520,465]
+ ];
 
-function startJourney() {
-    if (running) return;
+ const path2=[
+  [520,465],[500,445],[460,420],[405,440],
+  [360,425],[310,395],[270,340],[250,270],
+  [238,175],[255,160]
+ ];
 
-    running = true;
-    startTime = performance.now();
+ let state='ready', startedAt=0, phaseAt=0, raf=0, audioCtx=null;
 
-    startButton.style.display = "none";
-    hint.textContent = "NAVEGAÇÃO INICIADA";
-    statusText.textContent = "SINAL DE NAVEGAÇÃO ATIVO";
+ const fmt=s=>{
+  s=Math.max(0,Math.floor(s));
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+ };
 
-    animation = requestAnimationFrame(moveBoat);
-}
+ function show(id){
+  overlays.forEach(o=>$(o).classList.toggle('show',o===id));
+ }
 
-function moveBoat(now) {
-    if (!running) return;
+ function setStatus(title,detail){
+  $('statusTitle').textContent=title;
+  $('statusDetail').textContent=detail;
+ }
 
-    const elapsed = now - startTime;
+ function setBoat(x,y){
+  boat.setAttribute('transform',`translate(${x} ${y})`);
+  coords.textContent=`${Math.round(x)}, ${Math.round(y)}`;
+ }
 
-    // Animação de demonstração de 20 segundos.
-    const duration = 20000;
+ function pointAt(points,t){
+  let lengths=[],total=0;
 
-    const progress = (elapsed % duration) / duration;
+  for(let i=1;i<points.length;i++){
+   let d=Math.hypot(
+    points[i][0]-points[i-1][0],
+    points[i][1]-points[i-1][1]
+   );
+   lengths.push(d);
+   total+=d;
+  }
 
-    const length = route.getTotalLength();
-    const point = route.getPointAtLength(length * progress);
+  let target=Math.max(0,Math.min(1,t))*total;
 
-    boat.setAttribute("cx", point.x);
-    boat.setAttribute("cy", point.y);
+  for(let i=0;i<lengths.length;i++){
+   if(target<=lengths[i]){
+    let f=lengths[i]?(target/lengths[i]):0;
 
-    animation = requestAnimationFrame(moveBoat);
-}
+    return [
+     points[i][0]+(points[i+1][0]-points[i][0])*f,
+     points[i][1]+(points[i+1][1]-points[i][1])*f
+    ];
+   }
+   target-=lengths[i];
+  }
+
+  return points[points.length-1];
+ }
+
+ function tick(now){
+  if(!startedAt)return;
+
+  const elapsedSec=(now-startedAt)/1000;
+  clock.textContent=fmt(elapsedSec);
+  elapsed.textContent='TEMPO DECORRIDO: '+fmt(elapsedSec);
+
+  if(state==='waiting'){
+   routeState.textContent='INICIALIZANDO';
+
+   if(now-phaseAt>=6000){
+    state='moving1';
+    phaseAt=now;
+    setStatus('NAVEGANDO','Embarcação em deslocamento pelo canal.');
+   }
+
+  }else if(state==='moving1'){
+   let t=(now-phaseAt)/120000;
+
+   setBoat(...pointAt(path1,t));
+   routeState.textContent='EM MOVIMENTO';
+
+   if(t>=1){
+    setBoat(...path1[path1.length-1]);
+    state='blocked';
+    routeState.textContent='OBSTRUÍDO';
+    setStatus('CAMINHO OBSTRUÍDO','Aguardando remoção da obstrução.');
+    show('obstacleOverlay');
+   }
+
+  }else if(state==='moving2'){
+   let t=(now-phaseAt)/170000;
+
+   setBoat(...pointAt(path2,t));
+   routeState.textContent='EM MOVIMENTO';
+
+   if(t>=1){
+    setBoat(...path2[path2.length-1]);
+    state='arrived';
+    routeState.textContent='DESTINO';
+    setStatus('PARADA OBRIGATÓRIA','A embarcação chegou ao ponto final.');
+    show('arrivalOverlay');
+   }
+  }
+
+  raf=requestAnimationFrame(tick);
+ }
+
+ function start(){
+  if(state!=='ready')return;
+
+  startAudio();
+  state='waiting';
+  startedAt=performance.now();
+  phaseAt=startedAt;
+  show(null);
+
+  setStatus('PREPARANDO NAVEGAÇÃO','Aguarde 6 segundos para o início do trajeto.');
+  $('startBtn').disabled=true;
+
+  raf=requestAnimationFrame(tick);
+ }
+
+ function startAudio(){
+  try{
+   const C=window.AudioContext||window.webkitAudioContext;
+   if(!C||audioCtx)return;
+
+   audioCtx=new C();
+
+   const gain=audioCtx.createGain();
+   gain.gain.value=.012;
+   gain.connect(audioCtx.destination);
+
+   const osc=audioCtx.createOscillator();
+   osc.type='sine';
+   osc.frequency.value=110;
+   osc.connect(gain);
+   osc.start();
+
+  }catch(e){}
+ }
+
+ $('startBtn').addEventListener('click',start);
+
+ $('secret').addEventListener('click',()=>{
+  if(state==='blocked'){
+   state='cleared';
+   routeState.textContent='LIBERADO';
+   setStatus('CAMINHO DESOBSTRUÍDO','A rota foi liberada pelo acesso técnico.');
+   show('clearOverlay');
+  }
+ });
+
+ $('yesBtn').addEventListener('click',()=>{
+  if(state!=='cleared')return;
+
+  state='moving2';
+  phaseAt=performance.now();
+  show(null);
+
+  setStatus('RETOMANDO NAVEGAÇÃO','Seguindo para o ponto final do trajeto.');
+ });
+
+ $('continueBtn').addEventListener('click',()=>{
+  if(state!=='arrived')return;
+
+  state='departing';
+  setStatus('DESEMBARQUE','Saindo do enquadramento...');
+  show(null);
+
+  const start=performance.now();
+  const from=path2[path2.length-1];
+
+  function leave(now){
+   const t=Math.min(1,(now-start)/1600);
+
+   setBoat(
+    from[0]+(from[0]-300)*t,
+    from[1]-260*t
+   );
+
+   if(t<1){
+    requestAnimationFrame(leave);
+   }else{
+    window.location.href='volta.html';
+   }
+  }
+
+  requestAnimationFrame(leave);
+ });
+
+ $('resetBtn').addEventListener('click',()=>{
+  cancelAnimationFrame(raf);
+
+  state='ready';
+  startedAt=0;
+  phaseAt=0;
+
+  clock.textContent='00:00';
+  elapsed.textContent='TEMPO DECORRIDO: 00:00';
+
+  setBoat(548,900);
+  routeState.textContent='EM ESPERA';
+  $('startBtn').disabled=false;
+
+  setStatus('AGUARDANDO INÍCIO','A embarcação permanece atracada.');
+  show('startOverlay');
+ });
+
+ setBoat(548,900);
+})();
 </script>
-
 </body>
 </html>
